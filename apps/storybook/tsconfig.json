@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@repo/icons": ["../../packages/icons/src/index.ts"]
+    }
+  },
+  "include": [".storybook", "src"]
+}

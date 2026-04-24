@@ -1,0 +1,15 @@
+{
+  "name": "icons-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "generate:icons": "pnpm --filter @repo/icons generate",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "storybook": "pnpm --filter @repo/icons build && pnpm --filter @repo/storybook storybook"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

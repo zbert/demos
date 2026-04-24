@@ -1,0 +1,10 @@
+[20:25:12.902] [INFO] storybook v10.3.5
+[20:25:12.974] [ERROR] [38;2;241;97;97mError: Invariant failed: expected options to have a port[39m
+    at invariant (file:///Users/rhernandez/gh-onenorth/figma/testing/icons/node_modules/.pnpm/storybook@10.3.5_@testing-library+dom@10.4.1_react-dom@19.2.5_react@19.2.5__react@19.2.5/node_modules/storybook/dist/_node-chunks/chunk-KIK2P2SN.js:20:11)
+    at buildDevStandalone (file:///Users/rhernandez/gh-onenorth/figma/testing/icons/node_modules/.pnpm/storybook@10.3.5_@testing-library+dom@10.4.1_react-dom@19.2.5_react@19.2.5__react@19.2.5/node_modules/storybook/dist/core-server/index.js:7940:54)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async withTelemetry (file:///Users/rhernandez/gh-onenorth/figma/testing/icons/node_modules/.pnpm/storybook@10.3.5_@testing-library+dom@10.4.1_react-dom@19.2.5_react@19.2.5__react@19.2.5/node_modules/storybook/dist/_node-chunks/chunk-FIR43JGQ.js:225:12)
+    at async dev (file:///Users/rhernandez/gh-onenorth/figma/testing/icons/node_modules/.pnpm/storybook@10.3.5_@testing-library+dom@10.4.1_react-dom@19.2.5_react@19.2.5__react@19.2.5/node_modules/storybook/dist/bin/core.js:2736:3)
+    at async _Command.<anonymous> (file:///Users/rhernandez/gh-onenorth/figma/testing/icons/node_modules/.pnpm/storybook@10.3.5_@testing-library+dom@10.4.1_react-dom@19.2.5_react@19.2.5__react@19.2.5/node_modules/storybook/dist/bin/core.js:2806:92)
+[20:25:12.981] [WARN] Broken build, fix the error above.
+You may need to refresh the browser.
