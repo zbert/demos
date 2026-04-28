@@ -1,0 +1,91 @@
+<!-- <label for="svg">SVG Code:</label>
+<textarea id="svg">
+  <svg xmlns="http://www.w3.org/2000/svg" width="250" height="250" viewBox="0 0 250 250" fill="none">
+    <g clip-path="url(#clip0_68_10)">
+      <path d="M201.811 0.0761719C203.462 0.673717 205.222 0.8723 206.934 1.27539C212.012 2.47167 219.779 4.88772 224.058 7.94727C231.7 13.4124 239.803 21.2345 244.108 29.6621C245.747 33.0467 247.217 36.9883 248.125 40.5762C248.599 42.4416 249.409 47.3969 250 48.7051V201.337L249.925 201.546C248.87 204.524 248.503 209.04 247.378 212.115C246.14 215.486 244.25 220.728 242.267 223.664C237.392 230.878 228.829 239.693 221.098 243.79C218.496 245.169 213.134 247.168 210.235 247.993C207.993 248.63 203.832 249.138 201.863 250H48.1855C46.9761 249.292 40.1279 248.24 38.2666 247.547C34.5503 246.163 30.0122 244.686 26.6182 242.494C19.7429 238.055 12.4688 230.637 7.7793 223.915C6.15559 221.588 4.55714 217.491 3.57812 214.857C2.83484 212.895 2.20911 210.889 1.70508 208.852C1.33178 207.296 0.662168 203.068 0 201.893V47.8926C0.697836 46.8206 1.61169 41.1516 2.17969 39.3818C3.19592 36.2153 4.27363 32.8911 5.75684 29.8438C9.89238 21.347 19.1251 12.2753 26.9775 7.20605C29.7749 5.40026 35.3818 3.50046 38.6201 2.32129C41.1753 1.3909 45.2993 1.03086 47.9551 0.0761719L48.1611 0H201.605L201.811 0.0761719ZM129.844 23.6982L129.822 123.778L129.821 150.004C129.821 155.476 130.185 162.546 129.235 167.772C126.467 182.267 114.993 191.716 100.276 191.666C74.1753 191.576 61.0173 159.259 80.2832 141.222C89.5521 132.544 97.4134 131.436 109.558 133.804C109.33 129.822 109.454 125.106 109.459 121.066L109.516 98.9346C93.8521 97.1377 75.3433 101.029 62.541 111.116C58.7785 114.081 52.4802 120.666 49.5234 124.451C36.628 140.96 33.917 168.099 42.2061 187.154C43.5118 189.992 47.4409 197.815 49.3564 200.207C56.7898 209.489 67.254 218.037 78.3584 222.215C92.6207 227.58 111.853 227.886 125.832 221.315C137.26 215.944 148.879 206.705 155.031 195.561C157.175 192.198 159.621 188.356 160.828 184.52C162.327 179.756 164.277 172.54 164.438 167.477C165.242 142.185 164.531 116.446 164.803 91.1582C166.754 92.6734 169.848 95.1749 171.965 96.3242C180.55 100.985 190.016 104.149 199.673 105.551C204.17 106.204 208.546 106.314 212.629 106.877L212.646 72.1885C211.254 72.2263 210.017 72.1894 208.629 72.0566C183.984 69.6958 163.852 48.9444 164.683 23.6895L129.844 23.6982Z" fill="white"/>
+    </g>
+    <defs>
+      <clipPath id="clip0_68_10">
+        <rect width="250" height="250" fill="white"/>
+      </clipPath>
+    </defs>
+  </svg>
+</textarea> -->
+
+<input type="file" id="picker" name="fileList" webkitdirectory multiple />
+<button disabled id="import">import</button>
+<p>preview:</p>
+<ul id="listing">
+  <li>no files selected</li>
+</ul>
+
+<script>
+  // document.getElementById('create').onclick = () => {
+  //   const textbox = document.getElementById('count');
+  //   const count = parseInt(textbox.value, 10);
+  //   parent.postMessage(
+  //     { pluginMessage: { type: 'create-shapes', count } },
+  //     '*',
+  //   );
+  // };
+
+  // document.getElementById('cancel').onclick = () => {
+  //   parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
+  // };
+  const picker = document.getElementById('picker');
+  const listing = document.getElementById('listing');
+  const importButton = document.getElementById('import');
+  let files = [];
+  picker.addEventListener('change', async (e) => {
+    listing.innerHTML = '';
+    // for (let file of Array.from(e.target.files)) {
+    //   const item = document.createElement('li');
+    //   item.textContent = file.webkitRelativePath;
+    //   item.textContent = file.name;
+    //   listing.appendChild(item);
+    // }
+
+    // const displayImage = async (file) => {
+    //   console.log(await file.text());
+    // };
+    // displayImage(Array.from(e.target.files)[0]);
+
+    const parseFiles = async (targetFiles) => {
+      const parsedFiles = [];
+      for (let index = 0; index <= targetFiles.length; index += 1) {
+        const file = targetFiles[index];
+        if (file) {
+          const fileName = file.name;
+          const item = document.createElement('li');
+
+          if (fileName.includes('.svg')) {
+            const content = await file.text();
+            const name = fileName.replaceAll('.svg', ''); // possibly parse folder structure to determine full naming convention
+            parsedFiles.push({ content, name });
+            item.textContent = `${name} (${file.webkitRelativePath})`;
+          }
+          listing.appendChild(item);
+        }
+      }
+      return parsedFiles;
+    };
+
+    files = await parseFiles(Array.from(e.target.files));
+    if (files.length > 0) {
+      importButton.disabled = false;
+    } else {
+      importButton.disabled = true;
+    }
+  });
+  document.getElementById('import').onclick = () => {
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: 'import',
+          svgs: files,
+        },
+      },
+      '*',
+    );
+  };
+</script>
