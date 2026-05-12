@@ -1,13 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import React, { useMemo, useState } from "react";
-import * as Icons from "@repo/icons";
 import { iconsManifest } from "@repo/icons";
-
-type IconComponent = React.ComponentType<React.SVGProps<SVGSVGElement>>;
-
-const iconMap = Object.fromEntries(
-  iconsManifest.map((item) => [item.componentName, (Icons as Record<string, unknown>)[item.componentName]])
-) as Record<string, IconComponent>;
 
 function AllIconsGallery() {
   const [query, setQuery] = useState("");
@@ -18,7 +11,8 @@ function AllIconsGallery() {
     return iconsManifest.filter((item) => {
       return (
         item.name.toLowerCase().includes(normalized) ||
-        item.componentName.toLowerCase().includes(normalized)
+        item.className.toLowerCase().includes(normalized) ||
+        item.tagName.toLowerCase().includes(normalized)
       );
     });
   }, [query]);
@@ -29,7 +23,7 @@ function AllIconsGallery() {
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Filter by file or component name"
+        placeholder="Filter by file, class, or tag name"
         style={{
           width: "100%",
           marginBottom: 20,
@@ -47,13 +41,12 @@ function AllIconsGallery() {
         }}
       >
         {filtered.map((item) => {
-          const Icon = iconMap[item.componentName];
           return (
             <div
-              key={item.componentName}
+              key={item.tagName}
               style={{
                 border: "1px solid #ececec",
-                borderRadius: 12,
+                borderRadius: 8,
                 padding: 14,
                 background: "#fff"
               }}
@@ -69,10 +62,15 @@ function AllIconsGallery() {
                   borderRadius: 8
                 }}
               >
-                <Icon width={36} height={36} aria-hidden="true" />
+                {React.createElement(item.tagName, {
+                  "aria-hidden": "true",
+                  height: 36,
+                  width: 36
+                })}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{item.componentName}</div>
+              <div style={{ fontSize: 12, fontWeight: 700 }}>{item.className}</div>
               <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>{item.name}.svg</div>
+              <code style={{ display: "block", fontSize: 11, marginTop: 4 }}>{item.tagName}</code>
             </div>
           );
         })}

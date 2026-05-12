@@ -1,0 +1,25 @@
+- name: arrow_long_forward
+  friendly_name: Arrow long forward
+  aliases:
+  - arrow
+  - long
+  - forward
+  sizes:
+  - 32
+
+- name: briefcase-logo-best
+  friendly_name: Briefcase logo best
+  aliases:
+  - briefcase
+  - logo
+  - best
+  sizes:
+  - 148
+
+- name: code_circle
+  friendly_name: Code circle
+  aliases:
+  - code
+  - circle
+  sizes:
+  - 96

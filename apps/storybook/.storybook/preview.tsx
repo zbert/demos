@@ -10,7 +10,14 @@ const preview: Preview = {
       }
     },
     layout: "centered"
-  }
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ margin: "3em" }}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default preview;

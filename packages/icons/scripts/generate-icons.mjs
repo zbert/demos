@@ -1,10 +1,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { transform } from "@svgr/core";
 
 const packageRoot = path.resolve(import.meta.dirname, "..");
 const rawDir = path.join(packageRoot, "src", "raw");
-const componentsDir = path.join(packageRoot, "src", "components");
+const webComponentsDir = path.join(packageRoot, "src", "web-components");
+const legacyComponentsDir = path.join(packageRoot, "src", "components");
 const indexFile = path.join(packageRoot, "src", "index.ts");
 const manifestFile = path.join(packageRoot, "src", "manifest.ts");
 
@@ -17,27 +17,57 @@ function toPascalCase(fileName) {
     .join("");
 }
 
-async function cleanGeneratedComponents() {
-  await fs.mkdir(componentsDir, { recursive: true });
-  const files = await fs.readdir(componentsDir);
-  await Promise.all(
-    files
-      .filter((file) => file.endsWith(".tsx"))
-      .map((file) => fs.unlink(path.join(componentsDir, file)))
-  );
+function toCamelCase(value) {
+  return value.charAt(0).toLowerCase() + value.slice(1);
 }
 
-function buildComponentTemplate() {
-  return (variables, { tpl }) => {
-    const { componentName, jsx } = variables;
-    return tpl`
-import type { IconProps } from "../types";
+function toKebabCase(fileName) {
+  return fileName
+    .replace(/\.svg$/i, "")
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part.toLowerCase())
+    .join("-");
+}
 
-const ${componentName} = ({ title, ...props }: IconProps) => ${jsx};
+async function cleanGeneratedFiles() {
+  await fs.mkdir(webComponentsDir, { recursive: true });
+  const webComponentFiles = await fs.readdir(webComponentsDir);
+  await Promise.all(
+    webComponentFiles
+      .filter((file) => file.endsWith(".ts"))
+      .map((file) => fs.unlink(path.join(webComponentsDir, file)))
+  );
 
-export default ${componentName};
-`;
-  };
+  try {
+    const legacyFiles = await fs.readdir(legacyComponentsDir);
+    await Promise.all(
+      legacyFiles
+        .filter((file) => file.endsWith(".tsx"))
+        .map((file) => fs.unlink(path.join(legacyComponentsDir, file)))
+    );
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      throw error;
+    }
+  }
+}
+
+function buildWebComponentSource({ className, svg, tagName, tagNameExport }) {
+  return [
+    'import { createIconElement, defineIconElement } from "../icon-element";',
+    "",
+    `const svg = ${JSON.stringify(svg)};`,
+    "",
+    `export class ${className} extends createIconElement(svg) {}`,
+    "",
+    `export const ${tagNameExport} = "${tagName}";`,
+    "",
+    `defineIconElement(${tagNameExport}, ${className});`,
+    "",
+    `export default ${className};`,
+    ""
+  ].join("\n");
 }
 
 async function generate() {
@@ -49,49 +79,43 @@ async function generate() {
     throw new Error(`No SVG files found in ${rawDir}`);
   }
 
-  await cleanGeneratedComponents();
+  await cleanGeneratedFiles();
 
   const manifest = [];
 
   for (const fileName of rawFiles) {
     const sourcePath = path.join(rawDir, fileName);
-    const rawSvg = await fs.readFile(sourcePath, "utf8");
+    const rawSvg = (await fs.readFile(sourcePath, "utf8")).trim();
 
     const baseName = toPascalCase(fileName);
-    const componentName = `${baseName}Icon`;
+    const className = `${baseName}IconElement`;
+    const tagName = `repo-icon-${toKebabCase(fileName)}`;
+    const tagNameExport = `${toCamelCase(baseName)}IconTagName`;
 
-    const tsx = await transform(
-      rawSvg,
-      {
-        typescript: true,
-        expandProps: "end",
-        icon: false,
-        titleProp: false,
-        jsxRuntime: "automatic",
-        plugins: ["@svgr/plugin-jsx"],
-        svgo: false,
-        template: buildComponentTemplate()
-      },
-      { componentName }
+    const webComponentPath = path.join(webComponentsDir, `${className}.ts`);
+    await fs.writeFile(
+      webComponentPath,
+      buildWebComponentSource({ className, svg: rawSvg, tagName, tagNameExport }),
+      "utf8"
     );
-
-    const componentPath = path.join(componentsDir, `${componentName}.tsx`);
-    await fs.writeFile(componentPath, `${tsx.trim()}\n`, "utf8");
 
     manifest.push({
       name: fileName.replace(/\.svg$/i, ""),
-      componentName,
+      className,
+      tagName,
+      tagNameExport,
       sourceFile: `src/raw/${fileName}`
     });
   }
 
   const exportLines = manifest.map(
-    ({ componentName }) =>
-      `export { default as ${componentName} } from "./components/${componentName}";`
+    ({ className, tagNameExport }) =>
+      `export { default as ${className}, ${tagNameExport} } from "./web-components/${className}";`
   );
 
   const indexContent = [
-    'export type { IconProps, IconManifestItem } from "./types";',
+    'export type { IconElementConstructor, IconManifestItem } from "./types";',
+    'export { defineIconElement } from "./icon-element";',
     'export { iconsManifest } from "./manifest";',
     ...exportLines,
     ""
@@ -100,7 +124,7 @@ async function generate() {
   const manifestItems = manifest
     .map(
       (item) =>
-        `  { name: "${item.name}", componentName: "${item.componentName}", sourceFile: "${item.sourceFile}" }`
+        `  { name: "${item.name}", className: "${item.className}", tagName: "${item.tagName}", sourceFile: "${item.sourceFile}" }`
     )
     .join(",\n");
 
@@ -116,7 +140,7 @@ async function generate() {
   await fs.writeFile(indexFile, indexContent, "utf8");
   await fs.writeFile(manifestFile, manifestContent, "utf8");
 
-  process.stdout.write(`Generated ${manifest.length} icon components.\n`);
+  process.stdout.write(`Generated ${manifest.length} icon web components.\n`);
 }
 
 generate().catch((error) => {

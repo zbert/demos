@@ -1,47 +1,48 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type React from "react";
-import * as Icons from "@repo/icons";
+import React from "react";
 import { iconsManifest } from "@repo/icons";
 
 type StoryArgs = {
-  iconName: string;
+  tagName: string;
   size: number;
   className?: string;
   ariaLabel: string;
 };
 
-function IconPreview({ iconName, size, className, ariaLabel }: StoryArgs) {
-  const iconRecord = Icons as unknown as Record<
-    string,
-    React.ComponentType<React.SVGProps<SVGSVGElement>>
-  >;
-  const Icon = iconRecord[iconName];
+function IconPreview({ tagName, size, className, ariaLabel }: StoryArgs) {
+  const icon = iconsManifest.find((item) => item.tagName === tagName);
 
-  if (!Icon) {
-    return <div>Icon not found: {iconName}</div>;
+  if (!icon) {
+    return <div>Icon not found: {tagName}</div>;
   }
 
   return (
     <div style={{ display: "grid", gap: 12, justifyItems: "center" }}>
-      <Icon width={size} height={size} className={className} aria-label={ariaLabel} role="img" />
-      <code>{iconName}</code>
+      {React.createElement(icon.tagName, {
+        "aria-label": ariaLabel,
+        className,
+        height: size,
+        role: "img",
+        width: size
+      })}
+      <code>{icon.tagName}</code>
     </div>
   );
 }
 
-const iconOptions = iconsManifest.map((item) => item.componentName);
+const iconOptions = iconsManifest.map((item) => item.tagName);
 
 const meta: Meta<typeof IconPreview> = {
   title: "Icons/Icon",
   component: IconPreview,
   args: {
-    iconName: iconOptions[0],
+    tagName: iconOptions[0],
     size: 64,
     className: "",
     ariaLabel: "icon"
   },
   argTypes: {
-    iconName: {
+    tagName: {
       control: { type: "select" },
       options: iconOptions
     },
@@ -59,7 +60,7 @@ const meta: Meta<typeof IconPreview> = {
     docs: {
       description: {
         component:
-          "Per-icon template with controls for icon selection, size, className, and aria-label."
+          "Per-icon template with controls for custom element selection, size, className, and aria-label."
       }
     }
   }

@@ -5,7 +5,7 @@ import { Meta } from "@storybook/addon-docs/blocks";
 # Icon Pipeline Notes
 
 - Raw source files live in `packages/icons/src/raw`.
-- Filenames are transformed deterministically: `snake_case.svg` -> `PascalCaseIcon`.
-- Generate components and exports with `pnpm generate:icons`.
+- Filenames are transformed deterministically: `snake_case.svg` -> `PascalCaseIconElement` and `repo-icon-snake-case`.
+- Generate web components and exports with `pnpm generate:icons`.
 - Storybook reads from `@repo/icons` and `iconsManifest`.
 - Source fills and strokes are preserved as-is by the generator.
