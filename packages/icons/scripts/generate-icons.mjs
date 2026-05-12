@@ -1,10 +1,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { transform } from "@svgr/core";
 
 const packageRoot = path.resolve(import.meta.dirname, "..");
 const rawDir = path.join(packageRoot, "src", "raw");
 const componentsDir = path.join(packageRoot, "src", "components");
+const webComponentsDir = path.join(packageRoot, "src", "web-components");
 const indexFile = path.join(packageRoot, "src", "index.ts");
 const manifestFile = path.join(packageRoot, "src", "manifest.ts");
 
@@ -17,27 +17,49 @@ function toPascalCase(fileName) {
     .join("");
 }
 
+function toKebabCase(fileName) {
+  return fileName
+    .replace(/\.svg$/i, "")
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part.toLowerCase())
+    .join("-");
+}
+
 async function cleanGeneratedComponents() {
-  await fs.mkdir(componentsDir, { recursive: true });
-  const files = await fs.readdir(componentsDir);
+  await fs.rm(componentsDir, { force: true, recursive: true });
+  await fs.mkdir(webComponentsDir, { recursive: true });
+
+  const files = await fs.readdir(webComponentsDir);
   await Promise.all(
     files
-      .filter((file) => file.endsWith(".tsx"))
-      .map((file) => fs.unlink(path.join(componentsDir, file)))
+      .filter((file) => file.endsWith(".ts"))
+      .map((file) => fs.unlink(path.join(webComponentsDir, file)))
   );
 }
 
-function buildComponentTemplate() {
-  return (variables, { tpl }) => {
-    const { componentName, jsx } = variables;
-    return tpl`
-import type { IconProps } from "../types";
+function buildElementSource({ className, fileName, tagName }) {
+  return `/// <reference path="../svg.d.ts" />
+import type { TemplateResult } from "lit";
+import { defineIconElement, IconElement } from "../icon-element";
+import svgSource from "../raw/${fileName}";
 
-const ${componentName} = ({ title, ...props }: IconProps) => ${jsx};
+export class ${className} extends IconElement {
+  static readonly tagName = "${tagName}";
 
-export default ${componentName};
+  protected override renderSvg(): TemplateResult {
+    return this.renderSvgSource(svgSource);
+  }
+}
+
+defineIconElement(${className}.tagName, ${className});
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "${tagName}": ${className};
+  }
+}
 `;
-  };
 }
 
 async function generate() {
@@ -54,44 +76,34 @@ async function generate() {
   const manifest = [];
 
   for (const fileName of rawFiles) {
-    const sourcePath = path.join(rawDir, fileName);
-    const rawSvg = await fs.readFile(sourcePath, "utf8");
-
     const baseName = toPascalCase(fileName);
-    const componentName = `${baseName}Icon`;
+    const elementName = `${baseName}IconElement`;
+    const tagName = `repo-${toKebabCase(fileName)}-icon`;
 
-    const tsx = await transform(
-      rawSvg,
-      {
-        typescript: true,
-        expandProps: "end",
-        icon: false,
-        titleProp: false,
-        jsxRuntime: "automatic",
-        plugins: ["@svgr/plugin-jsx"],
-        svgo: false,
-        template: buildComponentTemplate()
-      },
-      { componentName }
-    );
-
-    const componentPath = path.join(componentsDir, `${componentName}.tsx`);
-    await fs.writeFile(componentPath, `${tsx.trim()}\n`, "utf8");
+    const elementPath = path.join(webComponentsDir, `${elementName}.ts`);
+    const elementSource = buildElementSource({
+      className: elementName,
+      fileName,
+      tagName
+    });
+    await fs.writeFile(elementPath, `${elementSource.trim()}\n`, "utf8");
 
     manifest.push({
       name: fileName.replace(/\.svg$/i, ""),
-      componentName,
+      elementName,
+      tagName,
       sourceFile: `src/raw/${fileName}`
     });
   }
 
   const exportLines = manifest.map(
-    ({ componentName }) =>
-      `export { default as ${componentName} } from "./components/${componentName}";`
+    ({ elementName }) =>
+      `export { ${elementName} } from "./web-components/${elementName}";`
   );
 
   const indexContent = [
-    'export type { IconProps, IconManifestItem } from "./types";',
+    'export type { IconElementConstructor, IconManifestItem } from "./types";',
+    'export { defineIconElement, IconElement } from "./icon-element";',
     'export { iconsManifest } from "./manifest";',
     ...exportLines,
     ""
@@ -100,7 +112,7 @@ async function generate() {
   const manifestItems = manifest
     .map(
       (item) =>
-        `  { name: "${item.name}", componentName: "${item.componentName}", sourceFile: "${item.sourceFile}" }`
+        `  { name: "${item.name}", elementName: "${item.elementName}", tagName: "${item.tagName}", sourceFile: "${item.sourceFile}" }`
     )
     .join(",\n");
 

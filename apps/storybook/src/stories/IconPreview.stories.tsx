@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import type React from "react";
-import * as Icons from "@repo/icons";
+import React from "react";
 import { iconsManifest } from "@repo/icons";
 
 type StoryArgs = {
@@ -11,25 +10,26 @@ type StoryArgs = {
 };
 
 function IconPreview({ iconName, size, className, ariaLabel }: StoryArgs) {
-  const iconRecord = Icons as unknown as Record<
-    string,
-    React.ComponentType<React.SVGProps<SVGSVGElement>>
-  >;
-  const Icon = iconRecord[iconName];
+  const icon = iconsManifest.find((item) => item.elementName === iconName);
 
-  if (!Icon) {
+  if (!icon) {
     return <div>Icon not found: {iconName}</div>;
   }
 
   return (
     <div style={{ display: "grid", gap: 12, justifyItems: "center" }}>
-      <Icon width={size} height={size} className={className} aria-label={ariaLabel} role="img" />
+      {React.createElement(icon.tagName, {
+        size,
+        className,
+        "aria-label": ariaLabel,
+        role: "img"
+      })}
       <code>{iconName}</code>
     </div>
   );
 }
 
-const iconOptions = iconsManifest.map((item) => item.componentName);
+const iconOptions = iconsManifest.map((item) => item.elementName);
 
 const meta: Meta<typeof IconPreview> = {
   title: "Icons/Icon",
@@ -59,7 +59,7 @@ const meta: Meta<typeof IconPreview> = {
     docs: {
       description: {
         component:
-          "Per-icon template with controls for icon selection, size, className, and aria-label."
+          "Per-icon template with controls for custom element selection, size, className, and aria-label."
       }
     }
   }

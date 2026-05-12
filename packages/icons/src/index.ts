@@ -1,5 +1,6 @@
-export type { IconProps, IconManifestItem } from "./types";
+export type { IconElementConstructor, IconManifestItem } from "./types";
+export { defineIconElement, IconElement } from "./icon-element";
 export { iconsManifest } from "./manifest";
-export { default as ArrowLongForwardIcon } from "./components/ArrowLongForwardIcon";
-export { default as BriefcaseLogoBestIcon } from "./components/BriefcaseLogoBestIcon";
-export { default as CodeCircleIcon } from "./components/CodeCircleIcon";
+export { ArrowLongForwardIconElement } from "./web-components/ArrowLongForwardIconElement";
+export { BriefcaseLogoBestIconElement } from "./web-components/BriefcaseLogoBestIconElement";
+export { CodeCircleIconElement } from "./web-components/CodeCircleIconElement";

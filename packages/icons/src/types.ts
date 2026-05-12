@@ -1,11 +1,12 @@
-import type { SVGProps } from "react";
+import type { IconElement } from "./icon-element";
 
-export type IconProps = SVGProps<SVGSVGElement> & {
-  title?: string;
+export type IconElementConstructor = typeof IconElement & {
+  readonly tagName: string;
 };
 
 export type IconManifestItem = {
   name: string;
-  componentName: string;
+  elementName: string;
+  tagName: string;
   sourceFile: string;
 };
