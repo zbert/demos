@@ -1,15 +1,42 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { iconsManifest } from "@repo/icons";
 
 type StoryArgs = {
   iconName: string;
   size: number;
   className?: string;
-  ariaLabel: string;
+  title: string;
 };
 
-function IconPreview({ iconName, size, className, ariaLabel }: StoryArgs) {
+type IconElementInstance = HTMLElement & {
+  title: string;
+};
+
+type RenderedIconProps = {
+  tagName: string;
+  size: number;
+  className?: string;
+  title: string;
+};
+
+function RenderedIcon({ tagName, size, className, title }: RenderedIconProps) {
+  const ref = useRef<IconElementInstance | null>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.title = title;
+    }
+  }, [tagName, title]);
+
+  return React.createElement(tagName, {
+    ref,
+    size,
+    className
+  });
+}
+
+function IconPreview({ iconName, size, className, title }: StoryArgs) {
   const icon = iconsManifest.find((item) => item.elementName === iconName);
 
   if (!icon) {
@@ -18,12 +45,7 @@ function IconPreview({ iconName, size, className, ariaLabel }: StoryArgs) {
 
   return (
     <div style={{ display: "grid", gap: 12, justifyItems: "center" }}>
-      {React.createElement(icon.tagName, {
-        size,
-        className,
-        "aria-label": ariaLabel,
-        role: "img"
-      })}
+      <RenderedIcon tagName={icon.tagName} size={size} className={className} title={title} />
       <code>{iconName}</code>
     </div>
   );
@@ -38,7 +60,7 @@ const meta: Meta<typeof IconPreview> = {
     iconName: iconOptions[0],
     size: 64,
     className: "",
-    ariaLabel: "icon"
+    title: "icon"
   },
   argTypes: {
     iconName: {
@@ -51,7 +73,7 @@ const meta: Meta<typeof IconPreview> = {
     className: {
       control: "text"
     },
-    ariaLabel: {
+    title: {
       control: "text"
     }
   },
@@ -59,7 +81,7 @@ const meta: Meta<typeof IconPreview> = {
     docs: {
       description: {
         component:
-          "Per-icon template with controls for custom element selection, size, className, and aria-label."
+          "Per-icon template with controls for custom element selection, size, className, and SVG title."
       }
     }
   }

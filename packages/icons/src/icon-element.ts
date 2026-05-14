@@ -9,7 +9,7 @@ import { unsafeSVG } from "lit/directives/unsafe-svg.js";
 
 export abstract class IconElement extends LitElement {
   static override properties = {
-    title: { type: String, reflect: true },
+    title: { attribute: false, noAccessor: true },
     size: { type: String, reflect: true }
   };
 
@@ -37,9 +37,8 @@ export abstract class IconElement extends LitElement {
   `;
 
   declare size: string;
-  declare title: string;
 
-  private generatedAriaLabel = false;
+  private svgTitle = "";
 
   constructor() {
     super();
@@ -47,10 +46,23 @@ export abstract class IconElement extends LitElement {
     this.title = "";
   }
 
+  override get title() {
+    return this.svgTitle;
+  }
+
+  override set title(value: string) {
+    const oldValue = this.svgTitle;
+    this.svgTitle = value ?? "";
+    this.requestUpdate("title", oldValue);
+  }
+
   override connectedCallback() {
     super.connectedCallback();
     this.syncSize();
-    this.syncAccessibility();
+  }
+
+  protected override firstUpdated() {
+    this.syncSvgTitle();
   }
 
   protected override updated(changedProperties: PropertyValues<this>) {
@@ -59,7 +71,7 @@ export abstract class IconElement extends LitElement {
     }
 
     if (changedProperties.has("title")) {
-      this.syncAccessibility();
+      this.syncSvgTitle();
     }
   }
 
@@ -70,35 +82,7 @@ export abstract class IconElement extends LitElement {
   protected abstract renderSvg(): TemplateResult;
 
   protected renderSvgSource(svgSource: string): TemplateResult {
-    return html`${unsafeSVG(injectTitle(svgSource, this.title))}`;
-  }
-
-  private syncAccessibility() {
-    const hasExplicitLabel =
-      this.hasAttribute("aria-label") || this.hasAttribute("aria-labelledby");
-
-    if (this.title) {
-      if (!hasExplicitLabel || this.generatedAriaLabel) {
-        this.setAttribute("aria-label", this.title);
-        this.generatedAriaLabel = true;
-      }
-
-      if (!this.hasAttribute("role")) {
-        this.setAttribute("role", "img");
-      }
-
-      this.removeAttribute("aria-hidden");
-      return;
-    }
-
-    if (this.generatedAriaLabel) {
-      this.removeAttribute("aria-label");
-      this.generatedAriaLabel = false;
-    }
-
-    if (!hasExplicitLabel) {
-      this.setAttribute("aria-hidden", "true");
-    }
+    return html`${unsafeSVG(svgSource)}`;
   }
 
   private syncSize() {
@@ -108,6 +92,14 @@ export abstract class IconElement extends LitElement {
     }
 
     this.style.setProperty("--icon-size", formatIconSize(this.size));
+  }
+
+  private syncSvgTitle() {
+    const titleElement = this.renderRoot.querySelector("svg title");
+
+    if (titleElement) {
+      titleElement.textContent = this.title;
+    }
   }
 }
 
@@ -122,28 +114,4 @@ export function defineIconElement(
 
 function formatIconSize(size: string) {
   return /^\d+(\.\d+)?$/.test(size) ? `${size}px` : size;
-}
-
-function injectTitle(svgSource: string, title: string) {
-  if (!title) {
-    return svgSource;
-  }
-
-  const svgMatch = svgSource.match(/<svg\b[^>]*>/i);
-
-  if (!svgMatch || svgMatch.index === undefined) {
-    return svgSource;
-  }
-
-  const openTagEnd = svgMatch.index + svgMatch[0].length;
-  return `${svgSource.slice(0, openTagEnd)}<title>${escapeHtml(title)}</title>${svgSource.slice(openTagEnd)}`;
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
