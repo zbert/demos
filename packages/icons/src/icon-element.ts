@@ -95,11 +95,14 @@ export abstract class IconElement extends LitElement {
   }
 
   private syncSvgTitle() {
-    const titleElement = this.renderRoot.querySelector("svg title");
+    const svgElement = this.renderRoot.querySelector("svg");
 
-    if (titleElement) {
-      titleElement.textContent = this.title;
+    if (!svgElement) {
+      return;
     }
+
+    const titleElement = getOrCreateTitleElement(svgElement);
+    titleElement.textContent = this.title;
   }
 }
 
@@ -114,4 +117,22 @@ export function defineIconElement(
 
 function formatIconSize(size: string) {
   return /^\d+(\.\d+)?$/.test(size) ? `${size}px` : size;
+}
+
+function getOrCreateTitleElement(svgElement: SVGSVGElement) {
+  const titleElement = Array.from(svgElement.children).find(
+    (element) => element.localName === "title"
+  );
+
+  if (titleElement instanceof SVGTitleElement) {
+    return titleElement;
+  }
+
+  const newTitleElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "title"
+  );
+  svgElement.insertBefore(newTitleElement, svgElement.firstChild);
+
+  return newTitleElement;
 }
